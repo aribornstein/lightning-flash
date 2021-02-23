@@ -3,12 +3,13 @@ from typing import Any, Dict, List, Union
 import pandas as pd
 
 
-def labels_from_categorical_csv(
+def labels_from_csv(
         csv: str,
         index_col: str,
         feature_cols: List,
         return_dict: bool = True,
-        index_col_collate_fn: Any = None
+        index_col_collate_fn: Any = None,
+        represention: str = "categorical"
 ) -> Union[Dict, List]:
     """
     Returns a dictionary with {index_col: label} for each entry in the csv.
@@ -31,8 +32,12 @@ def labels_from_categorical_csv(
 
     # everything else is binary
     feature_df = df[feature_cols]
-    labels = feature_df.to_numpy().argmax(1).tolist()
-
+    if represention == "categorical":
+        labels = feature_df.to_numpy().argmax(1).tolist()
+    elif represention == "onehot":
+        labels = feature_df.to_numpy().tolist()
+    else:
+        raise ValueError("Supported represenations are categorical or onehot")
     if return_dict:
         labels = {name: label for name, label in zip(names, labels)}
 
