@@ -15,6 +15,7 @@ import os
 import pathlib
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
 import pandas as pd
 import torch
 from PIL import Image, UnidentifiedImageError
@@ -75,7 +76,10 @@ class FilepathDataset(torch.utils.data.Dataset):
         img = self.loader(filename)
         if self.transform is not None:
             if str(type(self.transform)) == "<class 'albumentations.core.composition.Compose'>":
-                img = self.transform(image=img)
+                img = self.transform(image=np.array(img))["image"]
+                img = img.astype(np.float32)
+                img = img.transpose(2, 0, 1)
+                img = torch.tensor(img)
             else:
                 img = self.transform(img)
         label = None
@@ -196,7 +200,10 @@ class FlashDatasetFolder(VisionDataset):
         sample = self.loader(path)
         if self.transform is not None:
             if str(type(self.transform)) == "<class 'albumentations.core.composition.Compose'>":
-                sample = self.transform(image=sample)
+                sample = self.transform(image=np.array(sample))["image"]
+                sample = sample.astype(np.float32)
+                sample = sample.transpose(2, 0, 1)
+                sample = torch.tensor(sample)
             else:
                 sample = self.transform(sample)
         return (sample, target) if self.with_targets else sample
