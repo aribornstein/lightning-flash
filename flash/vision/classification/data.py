@@ -74,7 +74,10 @@ class FilepathDataset(torch.utils.data.Dataset):
         filename = self.fnames[index]
         img = self.loader(filename)
         if self.transform is not None:
-            img = self.transform(img)
+            if str(type(self.transform)) == "<class 'albumentations.core.composition.Compose'>":
+                img = self.transform(image=img)
+            else:
+                img = self.transform(img)
         label = None
         if self.has_dict_labels:
             name = os.path.splitext(filename)[0]
@@ -192,7 +195,10 @@ class FlashDatasetFolder(VisionDataset):
             path = self.samples[index]
         sample = self.loader(path)
         if self.transform is not None:
-            sample = self.transform(sample)
+            if str(type(self.transform)) == "<class 'albumentations.core.composition.Compose'>":
+                sample = self.transform(image=sample)
+            else:
+                sample = self.transform(sample)
         return (sample, target) if self.with_targets else sample
 
     def __len__(self) -> int:
