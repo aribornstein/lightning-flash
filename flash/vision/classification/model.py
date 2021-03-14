@@ -11,8 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
-
+from typing import Any, Callable, Mapping, Sequence, Type, Union, Optional, Tuple
+import sys
+import inspect
 import torch
 from pytorch_lightning.metrics import Accuracy
 from torch import nn
@@ -28,7 +29,7 @@ class ImageClassifier(ClassificationTask):
 
     Args:
         num_classes: Number of classes to classify.
-        backbone: A model to use to compute image features, defaults to ``"resnet18"``.
+        backbone: A string or (model, num_features) tuple to use to compute image features, defaults to ``"resnet18"``.
         pretrained: Use a pretrained backbone, defaults to ``True``.
         loss_fn: Loss function for training, defaults to :func:`torch.nn.functional.cross_entropy`.
         optimizer: Optimizer to use for training, defaults to :class:`torch.optim.SGD`.
@@ -40,13 +41,13 @@ class ImageClassifier(ClassificationTask):
     def __init__(
         self,
         num_classes: int,
-        backbone: str = "resnet18",
+        backbone: Union[str, Tuple[nn.Module, int]] = "resnet18",
         pretrained: bool = True,
         loss_fn: Optional[Callable] = None,
         optimizer: Type[torch.optim.Optimizer] = torch.optim.SGD,
         metrics: Union[Callable, Mapping, Sequence, None] = Accuracy(),
         learning_rate: float = 1e-3,
-        multilabel: bool = False
+        multilabel: bool = False,
     ):
         super().__init__(
             num_classes=num_classes,
@@ -60,7 +61,15 @@ class ImageClassifier(ClassificationTask):
 
         self.save_hyperparameters()
 
-        self.backbone, num_features = backbone_and_num_features(backbone, pretrained=pretrained)
+        # This is very hacky 
+        calling_function = inspect.getframeinfo(sys._getframe(1))[2]
+        if calling_function == "_load_model_state":
+            pretrained = False 
+        
+        if isinstance(backbone, tuple):
+            self.backbone, num_features = backbone
+        else:
+            self.backbone, num_features = backbone_and_num_features(backbone, pretrained=pretrained)
 
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
