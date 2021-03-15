@@ -15,7 +15,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Type, Union
 
 import pytorch_lightning as pl
 import torch
-from torch.nn.functional import binary_cross_entropy, cross_entropy
+from torch.nn.functional import binary_cross_entropy_with_logits, cross_entropy
 
 from flash.core.utils import bind_method
 from flash.core.data import TaskDataPipeline
@@ -105,7 +105,7 @@ class ClassificationTask(Task):
     @property
     def default_loss_fn(self) -> Callable:
         if self.multilabel:
-            return binary_cross_entropy
+            return binary_cross_entropy_with_logits
         return cross_entropy
 
     @staticmethod
