@@ -47,6 +47,7 @@ class ImageClassifier(ClassificationTask):
         optimizer: Type[torch.optim.Optimizer] = torch.optim.SGD,
         metrics: Union[Callable, Mapping, Sequence, None] = Accuracy(),
         learning_rate: float = 1e-3,
+        create_head: bool = True,
         multilabel: bool = False,
     ):
         super().__init__(
@@ -71,15 +72,21 @@ class ImageClassifier(ClassificationTask):
         else:
             self.backbone, num_features = backbone_and_num_features(backbone, pretrained=pretrained)
 
-        self.head = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
-            nn.Linear(num_features, num_classes),
-        )
+        if create_head:
+            self.head = nn.Sequential(
+                nn.AdaptiveAvgPool2d((1, 1)),
+                nn.Flatten(),
+                nn.Linear(num_features, num_classes),
+            )
+        else:
+            self.head = False
 
     def forward(self, x) -> Any:
         x = self.backbone(x)
-        return self.head(x)
+        if self.head:
+            return self.head(x)
+        else:
+            return x
 
     @staticmethod
     def default_pipeline() -> ImageClassificationDataPipeline:
